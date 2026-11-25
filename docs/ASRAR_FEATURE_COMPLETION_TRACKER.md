@@ -65,3 +65,14 @@
 - تست‌های اجراشده و نتیجهٔ واقعی
 - موارد باقیمانده/محدودیت‌ها
 - وضعیت: در حال انجام / پیاده‌سازی شده ولی تست‌نشده / تست‌شده / تأیید کاربر
+
+
+## بازبینی تکمیلی وضعیت واقعی — ۲۵ نوامبر ۲۰۲۶
+- پروژهٔ Supabase با ref برابر `pgpjlqpelxbunmxodgdj` در وضعیت `ACTIVE_HEALTHY` است؛ URL و publishable key در `supabase-config.js` شاخهٔ آزمایشی قرار دارند.
+- پنج migration در پروژه ثبت شده‌اند: هسته آنلاین، امکانات تجاری/مدیریت، محدودسازی اجرای توابع trigger-only، احراز هویت شماره/PIN و policy محدودسازی rate-limit.
+- شمارش تجمیعی آخرین بررسی: `profiles=0`، `asrar_orders=0`، `asrar_support_threads=0`، `asrar_support_messages=0`، `asrar_subscription_requests=0`، `asrar_user_subscriptions=0`. هیچ دادهٔ واقعی کاربر/سفارش/پیام کافه منتقل نشده است.
+- Security Advisor در آخرین اجرا بدون finding بود. Performance Advisor چند هشدار دربارهٔ foreign-key index، ارزیابی توابع در policyهای RLS و multiple permissive policies گزارش کرد؛ اینها برای مرحلهٔ بهینه‌سازی ثبت شدند.
+- فهرست Edge Functions پروژه خالی است؛ بنابراین `phone-pin-auth` هنوز deploy نشده و ورود شماره/PIN از سرور عملیاتی نیست.
+- در `asrar-commerce.js` یک Supabase client دوم ساخته می‌شود و مسیر ورود مدیر با prompt ایمیل/رمز انجام می‌شود؛ این با معماری مطلوبِ client/session مشترک و ورود مستقل مدیر با OTP تلگرام/Supabase Auth باید اصلاح شود.
+- صفحهٔ `prof` در `app.js` هنوز placeholder است. صفحهٔ واقعی حساب و UI ورود/ثبت‌نام کاربر باید ساخته و به جدول `profiles` و session متصل شود.
+- README قبلی اطلاعات منسوخ داشت و ادعا می‌کرد پروژهٔ Supabase هنوز ساخته/متصل نشده است؛ README در همین شاخه برای منع انتقال داده‌های کافه و ثبت وضعیت واقعی به‌روزرسانی شد.
