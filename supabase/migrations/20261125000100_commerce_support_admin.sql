@@ -24,6 +24,8 @@ create table if not exists public.asrar_orders (
   unit_price numeric(14,2) not null default 0,
   quantity integer not null default 1 check (quantity between 1 and 50),
   total_amount numeric(14,2) not null default 0,
+  discount_code text not null default '',
+  discount_amount numeric(14,2) not null default 0,
   customer_name text not null default '',
   customer_phone text not null default '',
   shipping_address text not null default '',
@@ -126,20 +128,44 @@ create index if not exists asrar_support_messages_thread_created_idx on public.a
 create or replace function public.asrar_set_order_snapshot()
 returns trigger
 language plpgsql
+security definer
 set search_path = public
 as $$
-declare p public.asrar_products%rowtype;
+declare
+  p public.asrar_products%rowtype;
+  d public.asrar_discount_codes%rowtype;
+  base_amount numeric(14,2);
 begin
   select * into p from public.asrar_products where id = new.product_id and is_active = true;
   if not found then raise exception 'محصول در دسترس نیست'; end if;
-  if p.stock > 0 and p.stock < new.quantity then raise exception 'موجودی محصول کافی نیست'; end if;
+  if p.stock < new.quantity then raise exception 'موجودی محصول کافی نیست'; end if;
   new.product_title := p.title;
   new.unit_price := case when p.sale_price is not null and p.sale_price > 0 then p.sale_price else p.price end;
-  new.total_amount := new.unit_price * new.quantity;
+  base_amount := new.unit_price * new.quantity;
+  new.discount_amount := 0;
+  if nullif(trim(new.discount_code),'') is not null then
+    select * into d from public.asrar_discount_codes
+    where upper(code)=upper(trim(new.discount_code))
+      and is_active=true
+      and (starts_at is null or starts_at <= now())
+      and (expires_at is null or expires_at > now())
+      and (max_uses is null or used_count < max_uses)
+    for update;
+    if not found then raise exception 'کد تخفیف نامعتبر یا منقضی شده است'; end if;
+    if d.discount_type='percent' then
+      new.discount_amount := least(base_amount, round(base_amount*d.discount_value/100,2));
+    else
+      new.discount_amount := least(base_amount,d.discount_value);
+    end if;
+    update public.asrar_discount_codes set used_count=used_count+1 where id=d.id;
+  end if;
+  new.total_amount := greatest(0,base_amount-new.discount_amount);
   new.updated_at := now();
   return new;
 end;
 $$;
+revoke all on function public.asrar_set_order_snapshot() from public;
+grant execute on function public.asrar_set_order_snapshot() to authenticated;
 
 drop trigger if exists asrar_order_snapshot_before_write on public.asrar_orders;
 create trigger asrar_order_snapshot_before_write
@@ -361,6 +387,8 @@ begin
      or new.unit_price is distinct from old.unit_price
      or new.quantity is distinct from old.quantity
      or new.total_amount is distinct from old.total_amount
+     or new.discount_code is distinct from old.discount_code
+     or new.discount_amount is distinct from old.discount_amount
      or new.customer_name is distinct from old.customer_name
      or new.customer_phone is distinct from old.customer_phone
      or new.shipping_address is distinct from old.shipping_address
