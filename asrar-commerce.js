@@ -179,6 +179,7 @@
         const {error}=await q;if(error)throw error;return renderAdmin();
       }
       if(id.togglePlan){const p=state.plans.find(x=>x.id===id.togglePlan);const {error}=await db.from('asrar_subscription_plans').update({is_active:!p.is_active}).eq('id',p.id);if(error)throw error;return renderAdmin()}
+      if(id.receipt){const order=state.orders.find(x=>x.id===id.receipt);if(!order?.receipt_url)return;const {data,error}=await db.storage.from('asrar-receipts').createSignedUrl(order.receipt_url,300);if(error)throw error;window.open(data.signedUrl,'_blank','noopener');return}
       if(id.order){
         const status=prompt('وضعیت سفارش: new / reviewing / approved / rejected / completed / cancelled','reviewing');if(!status)return;
         const payment_status=prompt('وضعیت پرداخت: unpaid / pending / paid / refunded / rejected','pending');if(!payment_status)return;
@@ -210,7 +211,7 @@
         const code=prompt('کد تخفیف');if(!code)return;
         const discount_type=prompt('نوع: percent یا fixed','percent');const discount_value=Number(prompt('مقدار تخفیف','10'));
         if(!['percent','fixed'].includes(discount_type)||!Number.isFinite(discount_value)||discount_value<=0)throw new Error('نوع یا مقدار تخفیف معتبر نیست');
-        const {error}=await db.from('asrar_discount_codes').insert({code:code.trim().toUpperCase(),discount_type,discount_value});if(error)throw error;return loadDiscounts();
+        const maxRaw=prompt('حداکثر تعداد استفاده (خالی یعنی نامحدود)','');const max_uses=maxRaw?Number(maxRaw):null;if(max_uses!==null&&(!Number.isInteger(max_uses)||max_uses<1))throw new Error('تعداد استفاده معتبر نیست');const expiresRaw=prompt('تاریخ انقضا به قالب ISO (اختیاری)','');const expires_at=expiresRaw?new Date(expiresRaw).toISOString():null;const {error}=await db.from('asrar_discount_codes').insert({code:code.trim().toUpperCase(),discount_type,discount_value,max_uses,expires_at});if(error)throw error;return loadDiscounts();
       }
       if(id.toggleDiscount){const {error}=await db.from('asrar_discount_codes').update({is_active:id.active!=='true'}).eq('id',id.toggleDiscount);if(error)throw error;return loadDiscounts()}
       if(b.id==='acSaveModals'){
