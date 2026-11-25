@@ -170,8 +170,9 @@ for each row execute function public.asrar_set_subscription_snapshot();
 create or replace function public.asrar_touch_thread()
 returns trigger
 language plpgsql
+security definer
 set search_path = public
-as $$
+as $
 begin
   update public.asrar_support_threads
   set last_message_at = new.created_at, updated_at = now(),
@@ -309,3 +310,33 @@ for update to authenticated using ((auth.jwt() -> 'app_metadata' ->> 'role') = '
 with check ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 insert into public.asrar_payment_settings (id) values (true) on conflict (id) do nothing;
+
+-- Private receipt storage: each user may upload/read only within their own UUID folder.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('asrar-receipts','asrar-receipts',false,5242880,array['image/jpeg','image/png','image/webp','application/pdf'])
+on conflict (id) do update set public=false,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
+
+drop policy if exists asrar_receipt_owner_read on storage.objects;
+create policy asrar_receipt_owner_read on storage.objects
+for select to authenticated using (
+  bucket_id='asrar-receipts'
+  and (storage.foldername(name))[1]=(select auth.uid())::text
+);
+drop policy if exists asrar_receipt_owner_insert on storage.objects;
+create policy asrar_receipt_owner_insert on storage.objects
+for insert to authenticated with check (
+  bucket_id='asrar-receipts'
+  and (storage.foldername(name))[1]=(select auth.uid())::text
+);
+drop policy if exists asrar_receipt_admin_read on storage.objects;
+create policy asrar_receipt_admin_read on storage.objects
+for select to authenticated using (
+  bucket_id='asrar-receipts'
+  and (auth.jwt() -> 'app_metadata' ->> 'role')='admin'
+);
+drop policy if exists asrar_receipt_admin_delete on storage.objects;
+create policy asrar_receipt_admin_delete on storage.objects
+for delete to authenticated using (
+  bucket_id='asrar-receipts'
+  and (auth.jwt() -> 'app_metadata' ->> 'role')='admin'
+);
