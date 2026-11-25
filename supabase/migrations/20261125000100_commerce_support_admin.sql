@@ -23,6 +23,7 @@ create table if not exists public.asrar_orders (
   product_title text not null default '',
   unit_price numeric(14,2) not null default 0,
   quantity integer not null default 1 check (quantity between 1 and 50),
+  stock_reserved boolean not null default true,
   total_amount numeric(14,2) not null default 0,
   discount_code text not null default '',
   discount_amount numeric(14,2) not null default 0,
@@ -212,6 +213,8 @@ drop trigger if exists asrar_support_message_touch_thread on public.asrar_suppor
 create trigger asrar_support_message_touch_thread
 after insert on public.asrar_support_messages
 for each row execute function public.asrar_touch_thread();
+revoke all on function public.asrar_touch_thread() from public;
+grant execute on function public.asrar_touch_thread() to authenticated;
 
 alter table public.asrar_products enable row level security;
 alter table public.asrar_orders enable row level security;
@@ -376,6 +379,9 @@ set search_path = public
 as $$
 begin
   if (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' then
+    if old.stock_reserved and old.status not in ('rejected','cancelled') and new.status in ('rejected','cancelled') then
+      new.stock_reserved := false;
+    end if;
     new.updated_at := now();
     return new;
   end if;
@@ -415,3 +421,47 @@ create policy asrar_orders_owner_receipt_update on public.asrar_orders
 for update to authenticated
 using (user_id = (select auth.uid()))
 with check (user_id = (select auth.uid()));
+
+-- Reserve stock atomically when an order is created; restore it if admin rejects/cancels.
+create or replace function public.asrar_reserve_product_stock()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.asrar_products
+  set stock = stock - new.quantity, updated_at = now()
+  where id = new.product_id and stock >= new.quantity;
+  if not found then raise exception 'موجودی محصول کافی نیست'; end if;
+  return new;
+end;
+$$;
+revoke all on function public.asrar_reserve_product_stock() from public;
+grant execute on function public.asrar_reserve_product_stock() to authenticated;
+drop trigger if exists asrar_reserve_stock_after_order on public.asrar_orders;
+create trigger asrar_reserve_stock_after_order
+after insert on public.asrar_orders
+for each row execute function public.asrar_reserve_product_stock();
+
+create or replace function public.asrar_restore_product_stock()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if old.stock_reserved and not new.stock_reserved then
+    update public.asrar_products
+    set stock = stock + old.quantity, updated_at = now()
+    where id = old.product_id;
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.asrar_restore_product_stock() from public;
+grant execute on function public.asrar_restore_product_stock() to authenticated;
+drop trigger if exists asrar_restore_stock_after_order_update on public.asrar_orders;
+create trigger asrar_restore_stock_after_order_update
+after update on public.asrar_orders
+for each row execute function public.asrar_restore_product_stock();
