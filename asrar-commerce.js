@@ -61,25 +61,23 @@
     return state.user;
   }
   async function requireUser() {
-    let user=await currentUser();
+    const user=await currentUser();
     if(user) return user;
-    const email=prompt('ایمیل حساب کاربری');
-    if(!email) return null;
-    const password=prompt('رمز عبور حساب');
-    if(!password) return null;
-    const {data,error}=await db.auth.signInWithPassword({email,password});
-    if(error) throw error;
-    state.user=data.user; state.admin=data.user?.app_metadata?.role==='admin';
-    return state.user;
+    alert('ابتدا از مسیر ورود حساب کاربری خود برنامه وارد شوید.');
+    return null;
   }
   async function requireAdmin() {
-    const user=await requireUser();
-    if(!user) return false;
-    if(user.app_metadata?.role!=='admin') {
-      if(user) await db.auth.signOut();
-      state.user=null;state.admin=false;
-      throw new Error('این حساب دسترسی مدیریت ندارد.');
+    let user=await currentUser();
+    if(!user){
+      const email=prompt('ایمیل مدیر');
+      if(!email) return false;
+      const password=prompt('رمز عبور مدیر');
+      if(!password) return false;
+      const {data,error}=await db.auth.signInWithPassword({email,password});
+      if(error) throw error;
+      user=data.user;state.user=user;
     }
+    if(user?.app_metadata?.role!=='admin') throw new Error('این حساب دسترسی مدیریت ندارد.');
     state.admin=true;return true;
   }
   const tabs = {
