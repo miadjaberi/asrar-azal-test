@@ -1,6 +1,6 @@
 # اسرار ازل
 
-وب‌اپ آنلاین: https://miadjaberi.github.io/asrar-azal/
+وب‌اپ آزمایشی: https://miadjaberi.github.io/asrar-azal-test/
 
 ## اصول پروژه
 - اجرای آنلاین؛ هیچ قابلیت آفلاین یا پاسخ جایگزین آفلاین در Service Worker وجود ندارد.
