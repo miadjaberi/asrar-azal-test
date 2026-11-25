@@ -244,8 +244,11 @@
           const {data,error}=await db.from('asrar_orders').insert({user_id:state.user.id,product_id:product.id,quantity,customer_name,customer_phone,shipping_address,notes}).select().single();
           if(error)throw error;
           const payText=state.payment?.instructions||'پس از ثبت سفارش، مدیریت روش پرداخت را اعلام می‌کند.';
-          body.innerHTML='<div class="ac-card"><h3>سفارش ثبت شد</h3><p>شماره سفارش: <b>'+esc(data.order_number)+'</b></p><p>مبلغ: <b>'+money(data.total_amount)+'</b></p><p class="ac-muted">'+esc(payText)+'</p><p class="ac-muted">وضعیت: '+statusLabel(data.status)+'</p><button class="ac-btn" id="acBackShop">بازگشت به فروشگاه</button></div>';
-          body.onclick=ev=>{if(ev.target.closest('#acBackShop'))openShop().catch(showError)};
+          body.innerHTML='<div class="ac-card"><h3>سفارش ثبت شد</h3><p>شماره سفارش: <b>'+esc(data.order_number)+'</b></p><p>مبلغ: <b>'+money(data.total_amount)+'</b></p><p class="ac-muted">'+esc(payText)+'</p><p class="ac-muted">وضعیت: '+statusLabel(data.status)+'</p><div class="ac-actions"><button class="ac-btn primary" id="acUploadReceipt">بارگذاری رسید پرداخت</button><button class="ac-btn" id="acBackShop">بازگشت به فروشگاه</button></div><div class="ac-muted" id="acReceiptStatus"></div></div>';
+          body.onclick=ev=>{
+            if(ev.target.closest('#acBackShop'))return openShop().catch(showError);
+            if(ev.target.closest('#acUploadReceipt')){const input=document.createElement('input');input.type='file';input.accept='image/jpeg,image/png,image/webp,application/pdf';input.onchange=async()=>{try{const file=input.files[0];if(!file)return;if(file.size>5*1024*1024)throw new Error('حجم فایل باید کمتر از ۵ مگابایت باشد');const path=state.user.id+'/'+data.id+'/'+Date.now()+'-'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');$('#acReceiptStatus').textContent='در حال بارگذاری…';const {data:up,error:upErr}=await db.storage.from('asrar-receipts').upload(path,file,{upsert:false,contentType:file.type});if(upErr)throw upErr;const {error:updateErr}=await db.from('asrar_orders').update({receipt_url:up.path,payment_status:'pending',updated_at:new Date().toISOString()}).eq('id',data.id);if(updateErr)throw updateErr;$('#acReceiptStatus').textContent='رسید با موفقیت ثبت شد.'}catch(err){$('#acReceiptStatus').textContent=err.message||'بارگذاری رسید ناموفق بود'}};input.click()}
+          };
         }
       }catch(err){showError(err)}
     };
@@ -253,7 +256,7 @@
   async function showMyOrders(){
     const {data,error}=await db.from('asrar_orders').select('*').eq('user_id',state.user.id).order('created_at',{ascending:false});
     if(error)throw error;
-    $('#acBody',layer).innerHTML='<h3>سوابق سفارش من</h3>'+tableOrders(data||[])+'<button class="ac-btn" id="acBackShop">بازگشت به فروشگاه</button>';
+    $('#acBody',layer).innerHTML='<h3>سوابق سفارش من</h3>'+((data||[]).map(o=>'<div class="ac-card"><div class="ac-row"><b>'+esc(o.order_number)+'</b><b>'+money(o.total_amount)+'</b></div><p>'+esc(o.product_title)+' · تعداد '+o.quantity+'</p><div class="ac-muted">'+date(o.created_at)+' · '+statusLabel(o.status)+' · '+statusLabel(o.payment_status)+'</div>'+(o.receipt_url?'<div class="ac-muted">رسید پرداخت ثبت شده است.</div>':'')+'</div>').join('')||'<div class="ac-empty">سفارشی ثبت نشده است.</div>')+'<button class="ac-btn" id="acBackShop">بازگشت به فروشگاه</button>';
     $('#acBody',layer).onclick=e=>{if(e.target.closest('#acBackShop'))openShop().catch(showError)};
   }
   async function openSubscriptions(){
