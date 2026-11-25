@@ -241,7 +241,8 @@
           const shipping_address=prompt('نشانی تحویل (در صورت نیاز)','')||'';
           const quantity=Number(prompt('تعداد','1'));if(!Number.isInteger(quantity)||quantity<1||quantity>50)throw new Error('تعداد معتبر نیست');
           const notes=prompt('توضیحات سفارش','')||'';
-          const {data,error}=await db.from('asrar_orders').insert({user_id:state.user.id,product_id:product.id,quantity,customer_name,customer_phone,shipping_address,notes}).select().single();
+          const discount_code=prompt('کد تخفیف (در صورت نداشتن خالی بگذارید)','')||'';
+          const {data,error}=await db.from('asrar_orders').insert({user_id:state.user.id,product_id:product.id,quantity,customer_name,customer_phone,shipping_address,notes,discount_code:discount_code.trim()}).select().single();
           if(error)throw error;
           const payText=state.payment?.instructions||'پس از ثبت سفارش، مدیریت روش پرداخت را اعلام می‌کند.';
           body.innerHTML='<div class="ac-card"><h3>سفارش ثبت شد</h3><p>شماره سفارش: <b>'+esc(data.order_number)+'</b></p><p>مبلغ: <b>'+money(data.total_amount)+'</b></p><p class="ac-muted">'+esc(payText)+'</p><p class="ac-muted">وضعیت: '+statusLabel(data.status)+'</p><div class="ac-actions"><button class="ac-btn primary" id="acUploadReceipt">بارگذاری رسید پرداخت</button><button class="ac-btn" id="acBackShop">بازگشت به فروشگاه</button></div><div class="ac-muted" id="acReceiptStatus"></div></div>';
@@ -262,11 +263,11 @@
   async function openSubscriptions(){
     const user=await requireUser();if(!user)return;
     openLayer('اشتراک‌های اسرار ازل');
-    const [p,r]=await Promise.all([db.from('asrar_subscription_plans').select('*').eq('is_active',true).order('sort_order'),db.from('asrar_subscription_requests').select('*').eq('user_id',user.id).order('created_at',{ascending:false})]);
-    if(p.error)throw p.error;if(r.error)throw r.error;
+    const [p,r,subs]=await Promise.all([db.from('asrar_subscription_plans').select('*').eq('is_active',true).order('sort_order'),db.from('asrar_subscription_requests').select('*').eq('user_id',user.id).order('created_at',{ascending:false}),db.from('asrar_user_subscriptions').select('*').eq('user_id',user.id).order('expires_at',{ascending:false})]);
+    if(p.error)throw p.error;if(r.error)throw r.error;if(subs.error)throw subs.error;
     const body=$('#acBody',layer);
     body.innerHTML='<h3>طرح‌های اشتراک</h3>'+p.data.map(x=>'<div class="ac-card"><div class="ac-row"><b>'+esc(x.title)+'</b><b>'+money(x.price)+'</b></div><p class="ac-muted">'+esc(x.description)+' · '+x.duration_days+' روز</p><button class="ac-btn primary" data-plan="'+x.id+'">درخواست اشتراک</button></div>').join('')||'<div class="ac-empty">طرح فعالی وجود ندارد.</div>'+'<h3>درخواست‌های من</h3>';
-    body.innerHTML+='<h3>درخواست‌های من</h3>'+(r.data||[]).map(x=>'<div class="ac-card">'+esc(x.plan_title)+' · '+money(x.amount)+' · '+statusLabel(x.status)+'<div class="ac-muted">'+date(x.created_at)+'</div></div>').join('');
+    body.innerHTML+='<h3>اشتراک‌های فعال و قبلی</h3>'+(subs.data||[]).map(x=>'<div class="ac-card">'+esc(x.plan_title)+' · '+statusLabel(x.status)+'<div class="ac-muted">شروع: '+date(x.starts_at)+' · پایان: '+date(x.expires_at)+'</div></div>').join('')+'<h3>درخواست‌های من</h3>'+(r.data||[]).map(x=>'<div class="ac-card">'+esc(x.plan_title)+' · '+money(x.amount)+' · '+statusLabel(x.status)+'<div class="ac-muted">'+date(x.created_at)+'</div></div>').join('');
     body.onclick=async e=>{
       const b=e.target.closest('[data-plan]');if(!b)return;
       try{
