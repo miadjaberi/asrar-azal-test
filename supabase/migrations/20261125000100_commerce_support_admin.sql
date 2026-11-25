@@ -141,6 +141,13 @@ begin
   if not found then raise exception 'محصول در دسترس نیست'; end if;
   if p.stock < new.quantity then raise exception 'موجودی محصول کافی نیست'; end if;
   new.product_title := p.title;
+  new.status := 'new';
+  new.payment_status := 'unpaid';
+  new.stock_reserved := true;
+  new.admin_note := '';
+  new.receipt_url := '';
+  new.payment_method := '';
+  new.created_at := now();
   new.unit_price := case when p.sale_price is not null and p.sale_price > 0 then p.sale_price else p.price end;
   base_amount := new.unit_price * new.quantity;
   new.discount_amount := 0;
