@@ -1,0 +1,39 @@
+name: Decode icons
+on:
+  push:
+    paths:
+      - 'icon-*.part*'
+      - 'icon-*.b64'
+      - '.github/workflows/decode-icons.yml'
+  workflow_dispatch:
+jobs:
+  decode:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode PNG icons
+        run: |
+          python3 << 'PY'
+          import base64, pathlib
+          root = pathlib.Path('.')
+          for name in ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png']:
+              parts = sorted(root.glob(name + '.part*'))
+              if parts:
+                  b64 = ''.join(p.read_text().strip() for p in parts)
+              elif (root / (name + '.b64')).exists():
+                  b64 = ''.join((root / (name + '.b64')).read_text().split())
+              else:
+                  print('skip', name)
+                  continue
+              data = base64.b64decode(b64)
+              (root / name).write_bytes(data)
+              print('wrote', name, len(data))
+          PY
+      - name: Commit icons
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add icon-192.png icon-512.png icon-maskable-512.png || true
+          git diff --staged --quiet || (git commit -m "chore: materialize PNG icons" && git push)
