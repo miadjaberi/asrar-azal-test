@@ -340,3 +340,50 @@ for delete to authenticated using (
   bucket_id='asrar-receipts'
   and (auth.jwt() -> 'app_metadata' ->> 'role')='admin'
 );
+
+-- Authenticated customers may attach a receipt to their own order only.
+-- The trigger blocks edits to price, owner, product, quantity and order status.
+create or replace function public.asrar_guard_customer_order_update()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' then
+    new.updated_at := now();
+    return new;
+  end if;
+  if new.id is distinct from old.id
+     or new.order_number is distinct from old.order_number
+     or new.user_id is distinct from old.user_id
+     or new.product_id is distinct from old.product_id
+     or new.product_title is distinct from old.product_title
+     or new.unit_price is distinct from old.unit_price
+     or new.quantity is distinct from old.quantity
+     or new.total_amount is distinct from old.total_amount
+     or new.customer_name is distinct from old.customer_name
+     or new.customer_phone is distinct from old.customer_phone
+     or new.shipping_address is distinct from old.shipping_address
+     or new.notes is distinct from old.notes
+     or new.status is distinct from old.status
+     or new.payment_method is distinct from old.payment_method
+     or new.admin_note is distinct from old.admin_note
+     or new.created_at is distinct from old.created_at
+     or new.payment_status not in ('unpaid','pending') then
+    raise exception 'Customers may only attach a payment receipt to their own order';
+  end if;
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists asrar_guard_customer_order_update_trigger on public.asrar_orders;
+create trigger asrar_guard_customer_order_update_trigger
+before update on public.asrar_orders
+for each row execute function public.asrar_guard_customer_order_update();
+
+drop policy if exists asrar_orders_owner_receipt_update on public.asrar_orders;
+create policy asrar_orders_owner_receipt_update on public.asrar_orders
+for update to authenticated
+using (user_id = (select auth.uid()))
+with check (user_id = (select auth.uid()));
