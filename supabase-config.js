@@ -1,9 +1,8 @@
-// تنظیمات عمومی Supabase برای اسرار ازل
-// فقط Project URL و Publishable key (یا anon key قدیمی) را وارد کنید.
-// هرگز service_role / secret key را در این فایل قرار ندهید.
+// تنظیمات عمومی Supabase برای اسرار ازل آزمایشی
+// فقط Project URL و Publishable key در کلاینت مجاز است؛ هرگز secret/service_role را منتشر نکنید.
 window.ASRAR_SUPABASE_CONFIG = Object.freeze({
-  url: "",
-  anonKey: "",
+  url: "https://pgpjlqpelxbunmxodgdj.supabase.co",
+  anonKey: "sb_publishable_HLicx4xlNdEyxMXTOTciCA_nsW0bAXV",
   contentTable: "site_content",
   contentKey: "main",
   storageBucket: "asrar-assets"
