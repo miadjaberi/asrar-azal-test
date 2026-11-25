@@ -392,6 +392,7 @@ begin
      or new.product_title is distinct from old.product_title
      or new.unit_price is distinct from old.unit_price
      or new.quantity is distinct from old.quantity
+     or new.stock_reserved is distinct from old.stock_reserved
      or new.total_amount is distinct from old.total_amount
      or new.discount_code is distinct from old.discount_code
      or new.discount_amount is distinct from old.discount_amount
