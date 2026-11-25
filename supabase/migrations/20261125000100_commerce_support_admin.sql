@@ -206,7 +206,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public
-as $
+as $$
 begin
   update public.asrar_support_threads
   set last_message_at = new.created_at, updated_at = now(),
