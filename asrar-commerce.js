@@ -4,14 +4,11 @@
 (() => {
   'use strict';
   const cfg = window.ASRAR_SUPABASE_CONFIG || {};
-  const supa = window.supabase;
-  if (!cfg.url || !cfg.anonKey || !supa?.createClient) {
-    console.warn('[Asrar commerce] Supabase project configuration is not complete.');
+  const db = window.ASRAR_SUPABASE_CLIENT;
+  if (!cfg.url || !db) {
+    console.warn('[Asrar commerce] Shared Supabase client is not available.');
     return;
   }
-  const db = supa.createClient(cfg.url, cfg.anonKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-  });
   const $ = (s, root=document) => root.querySelector(s);
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money = v => Number(v || 0).toLocaleString('fa-IR') + ' تومان';
