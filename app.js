@@ -98,7 +98,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-go],[data-
  if(t.dataset.go)show(t.dataset.go);else if(t.dataset.bk)show('book',+t.dataset.bk);
  else if(t.dataset.cat!==undefined){lc=t.dataset.cat;show('lib')}
  else{const k=t.dataset.mine;mine=mine.includes(k)?mine.filter(x=>x!=k):[...mine,k];saveMine();show('book',curArg)}});
-const adminShortcut=$('header .circ');if(adminShortcut)adminShortcut.dataset.go='prof';const headerLibraryLink=$('header .hr > svg');if(headerLibraryLink)headerLibraryLink.dataset.go='lib';
+const hdrSearch=$('#hdrSearch');if(hdrSearch)hdrSearch.addEventListener('click',()=>{show('lib');setTimeout(()=>$('#sq')?.focus(),80)});const hdrBell=$('#hdrBell');if(hdrBell)hdrBell.addEventListener('click',()=>{const n=C.ann||{};mo.innerHTML='<div class="mc" role="dialog" aria-modal="true" aria-labelledby="hdrNoticeTitle"><h3 id="hdrNoticeTitle">'+esc(n.t||'اعلان‌ها')+'</h3><p>'+esc(n.b||'در حال حاضر اعلان تازه‌ای وجود ندارد.').replace(/\\n/g,'<br>')+'</p><button class="btn" id="hdrNoticeClose">'+esc(n.btn||'بستن')+'</button></div>';mo.style.display='flex';$('#hdrNoticeClose')?.addEventListener('click',()=>{mo.style.display='none'})});
 ['home','lib','lib','istk','prof'].forEach((g,i)=>navs[i].dataset.go=g);
 async function sendMsg(){const m=$('#mt'),o=$('#mst'),x=m.value.trim();if(!x)return;const u='https://t.me/'+encodeURIComponent((C.brand.tg||'khatmjaberi').replace('@',''))+'?text='+encodeURIComponent(x.slice(0,1000));try{await navigator.clipboard.writeText(x)}catch(e){}window.open(u,'_blank','noopener');o.textContent='تلگرام باز می‌شود؛ متن پیام کپی هم شد.'}
 /* admin */
