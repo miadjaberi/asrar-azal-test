@@ -88,3 +88,19 @@
 - در کافه، فرم شماره/PIN و modal OTP شش‌رقمی تلگرام در HTML تأیید شد؛ سورس اجرایی main.js و تابع مدیر قابل بازیابی از جست‌وجوی فعلی نبود. منطق OTP مدیر نباید حدس زده شود.
 - هنوز هیچ Edge Function deploy، migration جدید، تغییر UI یا runtime test در این بازبینی انجام نشده است.
 - وضعیت سرنخ حساب: «در حال بررسی»؛ تکمیل یا آماده انتشار نیست.
+
+
+## پیشرفت اجرایی — ۲۷ نوامبر ۲۰۲۶
+- Migration افزایشی `20261127011930_profile_last_login.sql` روی پروژه مستقل اعمال شد و ستون `profiles.last_login_at` اضافه شد.
+- Edge Function `phone-pin-auth` با نسخه ۱ روی پروژه `pgpjlqpelxbunmxodgdj` مستقر شد؛ وضعیت سرور `ACTIVE` و `verify_jwt=false` است. چون ثبت‌نام/ورود پیش از داشتن نشست فراخوانی می‌شود، خود تابع ورودی، PIN، نقش و rate limit را بررسی می‌کند. محدودیت CORS به origin سایت GitHub Pages اسرار ازل محدود شده است.
+- اگر ساخت پروفایل پس از ایجاد Auth user شکست بخورد، تابع اکنون تلاش می‌کند Auth user یتیم را پاک کند.
+- پس از ورود موفق، تابع `last_login_at` و `updated_at` را سمت سرور ثبت می‌کند.
+- فایل `supabase/config.toml` اضافه شد تا `verify_jwt=false` در deployهای بعدی نیز حفظ شود.
+- دو ماژول `auth-service.js` و `account-ui.js` اضافه شدند؛ رابط ثبت‌نام/ورود شماره و PIN و نمایش پروفایل با تاریخ ثبت‌نام و آخرین ورود به قاب صفحه پروفایل متصل شد.
+- `app.js` Client مشترک را در `window.ASRAR_SUPABASE_CLIENT` منتشر می‌کند و `asrar-commerce.js` همان Client را مصرف می‌کند؛ ساخت Client دوم حذف شد.
+- ترتیب بارگذاری در `index.html` به‌روزرسانی شد و cache-busting فایل‌های اصلی افزایش یافت.
+- Syntax check برای `app.js`، `auth-service.js`، `account-ui.js` و `asrar-commerce.js` موفق بود.
+- Supabase list_edge_functions، نسخه فعال `phone-pin-auth` را نشان داد؛ migrationها نیز شامل `profile_last_login` هستند. Security Advisor فعلاً بدون finding گزارش شد.
+- **تست واقعی ثبت‌نام/ورود، CORS از مرورگر، نشست و خروج، پروفایل در UI و اتصال فروشگاه هنوز اجرا نشده است.** شاخه هنوز به‌عنوان نسخه عملیاتی/منتشرشده تأیید نشده.
+- مسیر ورود مدیر هنوز prompt ایمیل/رمز موقت دارد؛ OTP تلگرام مدیر سرنخ جداگانه و باز است.
+- وضعیت سرنخ حساب: **پیاده‌سازی اولیه انجام شده؛ تست سرتاسری و رفع نواقص باقی است.**
