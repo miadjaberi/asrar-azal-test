@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css?v=3">
-<link rel="stylesheet" href="layout-fix.css?v=2">
+<link rel="stylesheet" href="layout-fix.css?v=3">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute"><defs>
@@ -36,10 +36,21 @@
 <symbol id="users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5M14.5 14.5c2 .3 4.5 1.5 4.5 4"/></symbol>
 </defs></svg>
 <div class="app">
- <div class="hdr">
+ <div class="hdr" role="banner">
+  <button class="circ hdr-profile" type="button" data-go="prof" aria-label="حساب کاربری">
+   <svg class="i" aria-hidden="true"><use href="#user"></use></svg>
+  </button>
   <div class="ttl">
    <img id="lg" class="lgi" src="" alt="اسرار ازل" width="36" height="36">
    <div class="tn"><span id="bn1">اسرار ازل</span><small id="bn2">سرکتاب • رمل • مکاشفه</small></div>
+  </div>
+  <div class="hr" aria-label="ابزارهای سربرگ">
+   <button class="hdr-icon bell" id="hdrBell" type="button" aria-label="اعلان‌ها">
+    <svg class="i" aria-hidden="true"><use href="#bell"></use></svg>
+   </button>
+   <button class="hdr-icon" id="hdrSearch" type="button" aria-label="جستجو">
+    <svg class="i" aria-hidden="true"><use href="#search"></use></svg>
+   </button>
   </div>
  </div>
  <div class="main"><div class="scroll">
@@ -76,7 +87,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="logo.js?v=1"></script>
 <script>if(window.ASRAR_LOGO_DATA){var el=document.getElementById("lg");if(el)el.src=window.ASRAR_LOGO_DATA;}</script>
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 <script src="logo-apply.js?v=1"></script>
 </body>
 </html>
