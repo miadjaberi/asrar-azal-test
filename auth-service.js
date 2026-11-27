@@ -13,6 +13,5 @@ async function request(action,payload){
 async function currentUser(){const {data,error}=await db.auth.getUser();if(error)throw error;return data?.user||null}
 async function profile(){const u=await currentUser();if(!u)return null;const {data,error}=await db.from('profiles').select('id,name,phone,role,registered_at,last_login_at').eq('id',u.id).maybeSingle();if(error)throw error;return data||null}
 async function signOut(){const {error}=await db.auth.signOut();if(error)throw error;window.dispatchEvent(new Event('asrar-auth-change'))}
-db.auth.onAuthStateChange(()=>window.dispatchEvent(new Event('asrar-auth-change')));
 window.ASRAR_AUTH=Object.freeze({register:p=>request('register',{...p,name:String(p.name||'').trim()}),login:p=>request('login',p),currentUser,profile,signOut});
 })();
